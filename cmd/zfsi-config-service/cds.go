@@ -5,7 +5,6 @@ import (
 	"log"
 	"time"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/gogo/protobuf/types"
 	"github.com/hpidcock/zfsi/pkg/service-agg"
 	"github.com/thoas/go-funk"
@@ -42,7 +41,6 @@ func (cds *ClusterDiscoveryService) StreamClusters(call envoy.ClusterDiscoverySe
 			resources := funk.Map(req.ResourceNames, func(resourceName string) (string, string) {
 				return resourceName, resourceName
 			}).(map[string]string)
-			spew.Dump(req.ResourceNames)
 
 			services = funk.Filter(config, func(service service_agg.Service) bool {
 				_, ok := resources[service.Name]
