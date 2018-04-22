@@ -1,0 +1,5 @@
+# Zero F*$#KS Service Ingress
+
+ZFSI is a simple service ingress for Kubernetes, gRPC+gRPC-Web.
+
+The purpose of this project is to keep it simple and zero f*$#ks required.
