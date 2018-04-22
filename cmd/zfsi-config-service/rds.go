@@ -96,6 +96,17 @@ func (rds *RouteDiscoveryService) StreamRoutes(call envoy.RouteDiscoveryService_
 			Name:    "wildcard",
 			Domains: []string{"*"},
 			Routes:  routes,
+			Cors: &envoy_route.CorsPolicy{
+				Enabled: &types.BoolValue{
+					Value: true,
+				},
+				AllowOrigin:  []string{"*"},
+				AllowHeaders: "authorization,content-type,x-grpc-web",
+				AllowMethods: "POST",
+				AllowCredentials: &types.BoolValue{
+					Value: true,
+				},
+			},
 		}
 
 		routeConfig := &envoy.RouteConfiguration{
