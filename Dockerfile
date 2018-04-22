@@ -1,6 +1,6 @@
 FROM golang:1.10 AS build
 WORKDIR /go/src/github.com/hpidcock/zfsi
-ADD cmd pkg
+ADD cmd cmd
 ADD pkg pkg
 ADD vendor vendor
 WORKDIR /output
