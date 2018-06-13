@@ -84,6 +84,7 @@ func (rds *RouteDiscoveryService) StreamRoutes(call envoy.RouteDiscoveryService_
 							ClusterSpecifier: &envoy_route.RouteAction_Cluster{
 								Cluster: service.Name,
 							},
+							Timeout: &service.Timeout,
 						},
 					},
 				}

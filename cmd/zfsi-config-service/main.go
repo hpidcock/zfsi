@@ -22,6 +22,7 @@ var (
 	namespace             = flag.String("namespace", "default", "k8s namespace")
 	prefixAnnotation      = flag.String("prefix-annotation", "annotation.zfsi/prefix-list", "annotation on k8s services to use as route prefixes")
 	servicePortAnnotation = flag.String("service-port-annotation", "annotation.zfsi/service-port-name", "annotation on k8s services to use to map service ports")
+	timeoutAnnotation     = flag.String("timeout-annotation", "annotation.zfsi/timeout", "annotation on k8s services to use for request timeout")
 	inCluster             = flag.Bool("in-cluster", true, "use cluster service account or local .kube auth")
 )
 
@@ -32,6 +33,7 @@ func main() {
 		Namespace:             *namespace,
 		PrefixesAnnotation:    *prefixAnnotation,
 		ServicePortAnnotation: *servicePortAnnotation,
+		TimeoutAnnotation:     *timeoutAnnotation,
 		InCluster:             *inCluster,
 	}
 	serviceAgg, err := k8s_service_agg.NewServiceAggregate(k8sConfig)

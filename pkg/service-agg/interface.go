@@ -2,6 +2,7 @@ package service_agg
 
 import (
 	"context"
+	"time"
 )
 
 // Service
@@ -12,6 +13,8 @@ type Service struct {
 
 	Hostname string
 	Port     int
+
+	Timeout time.Duration
 
 	// TODO: Add support for TLS backends
 }

@@ -5,5 +5,6 @@ type Config struct {
 	Namespace             string
 	PrefixesAnnotation    string
 	ServicePortAnnotation string
+	TimeoutAnnotation     string
 	InCluster             bool
 }

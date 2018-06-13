@@ -7,6 +7,7 @@ import (
 	"os/user"
 	"path"
 	"strings"
+	"time"
 
 	"github.com/thoas/go-funk"
 
@@ -91,6 +92,7 @@ func (sa *ServiceAggregate) Services(context.Context) ([]service_agg.Service, er
 }
 
 func (sa *ServiceAggregate) parseService(ksvc core_v1.Service) (service_agg.Service, error) {
+	var err error
 	if ksvc.Spec.Type != core_v1.ServiceTypeClusterIP &&
 		ksvc.Spec.Type != core_v1.ServiceTypeNodePort &&
 		ksvc.Spec.Type != core_v1.ServiceTypeLoadBalancer {
@@ -105,6 +107,15 @@ func (sa *ServiceAggregate) parseService(ksvc core_v1.Service) (service_agg.Serv
 	portName, ok := ksvc.ObjectMeta.Annotations[sa.config.ServicePortAnnotation]
 	if ok == false {
 		return service_agg.Service{}, errInvalidService
+	}
+
+	timeoutString, ok := ksvc.ObjectMeta.Annotations[sa.config.TimeoutAnnotation]
+	timeout := 15 * time.Second // Envoy default
+	if ok {
+		timeout, err = time.ParseDuration(timeoutString)
+		if err != nil {
+			return service_agg.Service{}, err
+		}
 	}
 
 	ports := funk.Filter(ksvc.Spec.Ports, func(port core_v1.ServicePort) bool {
@@ -122,5 +133,6 @@ func (sa *ServiceAggregate) parseService(ksvc core_v1.Service) (service_agg.Serv
 	svc.Prefixes = strings.Split(prefixString, ",")
 	svc.Hostname = ksvc.Spec.ClusterIP
 	svc.Port = int(ports[0].Port)
+	svc.Timeout = timeout
 	return svc, nil
 }
