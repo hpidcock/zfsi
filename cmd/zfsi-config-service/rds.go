@@ -73,6 +73,7 @@ func (rds *RouteDiscoveryService) StreamRoutes(call envoy.RouteDiscoveryService_
 
 		for _, service := range config {
 			for _, prefix := range service.Prefixes {
+				timeout := service.Timeout
 				route := envoy_route.Route{
 					Match: envoy_route.RouteMatch{
 						PathSpecifier: &envoy_route.RouteMatch_Prefix{
@@ -84,7 +85,7 @@ func (rds *RouteDiscoveryService) StreamRoutes(call envoy.RouteDiscoveryService_
 							ClusterSpecifier: &envoy_route.RouteAction_Cluster{
 								Cluster: service.Name,
 							},
-							Timeout: &service.Timeout,
+							Timeout: &timeout,
 						},
 					},
 				}
