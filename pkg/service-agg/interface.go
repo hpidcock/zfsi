@@ -5,14 +5,19 @@ import (
 	"time"
 )
 
+// Host
+type Host struct {
+	Hostname string
+	Port     int
+}
+
 // Service
 type Service struct {
 	Name string
 
 	Prefixes []string
 
-	Hostname string
-	Port     int
+	Hosts []Host
 
 	Timeout time.Duration
 

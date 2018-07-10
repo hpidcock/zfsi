@@ -15,6 +15,8 @@ import (
 
 	core_v1 "k8s.io/api/core/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	labels "k8s.io/apimachinery/pkg/labels"
+	intstr "k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
@@ -128,11 +130,44 @@ func (sa *ServiceAggregate) parseService(ksvc core_v1.Service) (service_agg.Serv
 		return service_agg.Service{}, errInvalidService
 	}
 
+	var selectors labels.Set = ksvc.Spec.Selector
+	pods, err := sa.clientset.CoreV1().
+		Pods(sa.config.Namespace).
+		List(meta_v1.ListOptions{
+			LabelSelector: selectors.String(),
+		})
+	if err != nil {
+		return service_agg.Service{}, err
+	}
+
+	podPortName := ports[0].TargetPort
+
 	svc := service_agg.Service{}
 	svc.Name = ksvc.Name
 	svc.Prefixes = strings.Split(prefixString, ",")
-	svc.Hostname = ksvc.Spec.ClusterIP
-	svc.Port = int(ports[0].Port)
 	svc.Timeout = timeout
+
+	for _, pod := range pods.Items {
+		host := service_agg.Host{
+			Hostname: pod.Status.PodIP,
+		}
+
+		if podPortName.Type == intstr.Int {
+			host.Port = int(podPortName.IntVal)
+		} else {
+		out:
+			for _, container := range pod.Spec.Containers {
+				for _, namedPort := range container.Ports {
+					if namedPort.Name == podPortName.StrVal {
+						host.Port = int(namedPort.ContainerPort)
+						break out
+					}
+				}
+			}
+		}
+
+		svc.Hosts = append(svc.Hosts, host)
+	}
+
 	return svc, nil
 }

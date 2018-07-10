@@ -68,23 +68,25 @@ func servicesToClusterConfig(services []service_agg.Service) []types.Any {
 	for _, service := range services {
 
 		cluster := &envoy.Cluster{
-			Name:           service.Name,
-			Type:           envoy.Cluster_STRICT_DNS,
-			ConnectTimeout: 500 * time.Millisecond,
-			Hosts: []*envoy_core.Address{
-				&envoy_core.Address{
-					Address: &envoy_core.Address_SocketAddress{
-						SocketAddress: &envoy_core.SocketAddress{
-							Protocol: envoy_core.TCP,
-							Address:  service.Hostname,
-							PortSpecifier: &envoy_core.SocketAddress_PortValue{
-								PortValue: uint32(service.Port),
-							},
+			Name:                 service.Name,
+			Type:                 envoy.Cluster_STRICT_DNS,
+			ConnectTimeout:       1000 * time.Millisecond,
+			Http2ProtocolOptions: &envoy_core.Http2ProtocolOptions{},
+		}
+
+		for _, host := range service.Hosts {
+			address := &envoy_core.Address{
+				Address: &envoy_core.Address_SocketAddress{
+					SocketAddress: &envoy_core.SocketAddress{
+						Protocol: envoy_core.TCP,
+						Address:  host.Hostname,
+						PortSpecifier: &envoy_core.SocketAddress_PortValue{
+							PortValue: uint32(host.Port),
 						},
 					},
 				},
-			},
-			Http2ProtocolOptions: &envoy_core.Http2ProtocolOptions{},
+			}
+			cluster.Hosts = append(cluster.Hosts, address)
 		}
 
 		clusterAny, err := types.MarshalAny(cluster)
