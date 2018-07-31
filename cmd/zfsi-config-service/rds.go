@@ -108,6 +108,7 @@ func (rds *RouteDiscoveryService) StreamRoutes(call envoy.RouteDiscoveryService_
 				AllowCredentials: &types.BoolValue{
 					Value: true,
 				},
+				ExposeHeaders: "grpc-message,grpc-status,grpc-status-details-bin",
 			},
 		}
 
