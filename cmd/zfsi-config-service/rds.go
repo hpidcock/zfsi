@@ -86,6 +86,17 @@ func (rds *RouteDiscoveryService) StreamRoutes(call envoy.RouteDiscoveryService_
 								Cluster: service.Name,
 							},
 							Timeout: &timeout,
+							ResponseHeadersToAdd: []*envoy_core.HeaderValueOption{
+								&envoy_core.HeaderValueOption{
+									Header: &envoy_core.HeaderValue{
+										Key:   "access-control-expose-headers",
+										Value: "grpc-message,grpc-status,grpc-status-details-bin",
+									},
+									Append: &types.BoolValue{
+										Value: true,
+									},
+								},
+							},
 						},
 					},
 				}
@@ -108,7 +119,6 @@ func (rds *RouteDiscoveryService) StreamRoutes(call envoy.RouteDiscoveryService_
 				AllowCredentials: &types.BoolValue{
 					Value: true,
 				},
-				ExposeHeaders: "grpc-message,grpc-status,grpc-status-details-bin",
 			},
 		}
 
