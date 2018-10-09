@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/gogo/protobuf/types"
@@ -139,4 +140,8 @@ func (rds *RouteDiscoveryService) StreamRoutes(call envoy.RouteDiscoveryService_
 
 func (rds *RouteDiscoveryService) FetchRoutes(ctx context.Context, req *envoy.DiscoveryRequest) (*envoy.DiscoveryResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "unimplemented")
+}
+
+func (rds *RouteDiscoveryService) IncrementalRoutes(_ envoy.RouteDiscoveryService_IncrementalRoutesServer) error {
+	return errors.New("not implemented")
 }

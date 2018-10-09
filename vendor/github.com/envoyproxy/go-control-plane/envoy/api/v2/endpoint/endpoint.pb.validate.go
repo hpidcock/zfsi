@@ -51,6 +51,16 @@ func (m *Endpoint) Validate() error {
 		}
 	}
 
+	if v, ok := interface{}(m.GetHealthCheckConfig()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return EndpointValidationError{
+				Field:  "HealthCheckConfig",
+				Reason: "embedded message failed validation",
+				Cause:  err,
+			}
+		}
+	}
+
 	return nil
 }
 
@@ -203,7 +213,12 @@ func (m *LocalityLbEndpoints) Validate() error {
 
 	}
 
-	// no validation rules for Priority
+	if m.GetPriority() > 128 {
+		return LocalityLbEndpointsValidationError{
+			Field:  "Priority",
+			Reason: "value must be less than or equal to 128",
+		}
+	}
 
 	return nil
 }
@@ -238,3 +253,52 @@ func (e LocalityLbEndpointsValidationError) Error() string {
 }
 
 var _ error = LocalityLbEndpointsValidationError{}
+
+// Validate checks the field values on Endpoint_HealthCheckConfig with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, an error is returned.
+func (m *Endpoint_HealthCheckConfig) Validate() error {
+	if m == nil {
+		return nil
+	}
+
+	if m.GetPortValue() > 65535 {
+		return Endpoint_HealthCheckConfigValidationError{
+			Field:  "PortValue",
+			Reason: "value must be less than or equal to 65535",
+		}
+	}
+
+	return nil
+}
+
+// Endpoint_HealthCheckConfigValidationError is the validation error returned
+// by Endpoint_HealthCheckConfig.Validate if the designated constraints aren't met.
+type Endpoint_HealthCheckConfigValidationError struct {
+	Field  string
+	Reason string
+	Cause  error
+	Key    bool
+}
+
+// Error satisfies the builtin error interface
+func (e Endpoint_HealthCheckConfigValidationError) Error() string {
+	cause := ""
+	if e.Cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.Cause)
+	}
+
+	key := ""
+	if e.Key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sEndpoint_HealthCheckConfig.%s: %s%s",
+		key,
+		e.Field,
+		e.Reason,
+		cause)
+}
+
+var _ error = Endpoint_HealthCheckConfigValidationError{}

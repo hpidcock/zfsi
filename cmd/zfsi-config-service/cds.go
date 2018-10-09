@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"log"
 	"time"
 
@@ -61,6 +62,10 @@ func (cds *ClusterDiscoveryService) StreamClusters(call envoy.ClusterDiscoverySe
 
 func (cds *ClusterDiscoveryService) FetchClusters(ctx context.Context, req *envoy.DiscoveryRequest) (*envoy.DiscoveryResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "unimplemented")
+}
+
+func (cds *ClusterDiscoveryService) IncrementalClusters(_ envoy.ClusterDiscoveryService_IncrementalClustersServer) error {
+	return errors.New("not implemented")
 }
 
 func servicesToClusterConfig(services []service_agg.Service) []types.Any {
