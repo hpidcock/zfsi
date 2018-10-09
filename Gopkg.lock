@@ -14,6 +14,12 @@
   revision = "62a607eb02243845670f25a61cbc2d394c1ede10"
 
 [[projects]]
+  name = "github.com/davecgh/go-spew"
+  packages = ["spew"]
+  revision = "8991bc29aa16c548c550c7ff78260e27b9ab7c73"
+  version = "v1.1.1"
+
+[[projects]]
   name = "github.com/envoyproxy/go-control-plane"
   packages = [
     "envoy/api/v2",
@@ -443,6 +449,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "a1d4960420301bcf8d3aac7130958f747f72008bd872b9ba4dc309cdf7227ddd"
+  inputs-digest = "990ffcec1033ec47bab84537ea78a4d42e23a147ebd9de01ee9c054e8b94e024"
   solver-name = "gps-cdcl"
   solver-version = 1
