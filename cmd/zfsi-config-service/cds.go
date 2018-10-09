@@ -91,6 +91,9 @@ func (cds *ClusterDiscoveryService) IncrementalClusters(_ envoy.ClusterDiscovery
 func servicesToClusterConfig(services []service_agg.Service) []types.Any {
 	res := make([]types.Any, 0)
 	for _, service := range services {
+		if len(service.Hosts) == 0 {
+			continue
+		}
 
 		cluster := &envoy.Cluster{
 			Name:                 service.Name,
