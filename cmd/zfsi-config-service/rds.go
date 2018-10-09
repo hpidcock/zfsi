@@ -5,6 +5,7 @@ import (
 	"errors"
 	"time"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/gogo/protobuf/types"
 	"github.com/thoas/go-funk"
 
@@ -34,6 +35,8 @@ func (rds *RouteDiscoveryService) StreamRoutes(call envoy.RouteDiscoveryService_
 		if err != nil {
 			return err
 		}
+
+		spew.Dump(req)
 
 		config, ok := <-sub.ConfigChan
 		if ok == false {
@@ -139,7 +142,102 @@ func (rds *RouteDiscoveryService) StreamRoutes(call envoy.RouteDiscoveryService_
 }
 
 func (rds *RouteDiscoveryService) FetchRoutes(ctx context.Context, req *envoy.DiscoveryRequest) (*envoy.DiscoveryResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "unimplemented")
+	spew.Dump(req)
+	res := &envoy.DiscoveryResponse{
+		VersionInfo: time.Now().UTC().String(),
+		TypeUrl:     "type.googleapis.com/envoy.api.v2.RouteConfiguration",
+		Nonce:       req.ResponseNonce,
+		Resources:   make([]types.Any, 0),
+	}
+
+	if funk.ContainsString(req.ResourceNames, routeConfigName) == false {
+		return res, nil
+	}
+
+	routes := make([]envoy_route.Route, 0)
+	healthRoute := envoy_route.Route{
+		Match: envoy_route.RouteMatch{
+			PathSpecifier: &envoy_route.RouteMatch_Prefix{
+				Prefix: "/healthz",
+			},
+		},
+		Action: &envoy_route.Route_DirectResponse{
+			DirectResponse: &envoy_route.DirectResponseAction{
+				Status: 200,
+				Body: &envoy_core.DataSource{
+					Specifier: &envoy_core.DataSource_InlineString{
+						InlineString: "OK",
+					},
+				},
+			},
+		},
+	}
+	routes = append(routes, healthRoute)
+
+	config := rds.cs.LastConfig()
+
+	for _, service := range config {
+		for _, prefix := range service.Prefixes {
+			timeout := service.Timeout
+			route := envoy_route.Route{
+				Match: envoy_route.RouteMatch{
+					PathSpecifier: &envoy_route.RouteMatch_Prefix{
+						Prefix: "/" + prefix,
+					},
+				},
+				Action: &envoy_route.Route_Route{
+					Route: &envoy_route.RouteAction{
+						ClusterSpecifier: &envoy_route.RouteAction_Cluster{
+							Cluster: service.Name,
+						},
+						Timeout: &timeout,
+						ResponseHeadersToAdd: []*envoy_core.HeaderValueOption{
+							&envoy_core.HeaderValueOption{
+								Header: &envoy_core.HeaderValue{
+									Key:   "access-control-expose-headers",
+									Value: "grpc-message,grpc-status,grpc-status-details-bin",
+								},
+								Append: &types.BoolValue{
+									Value: true,
+								},
+							},
+						},
+					},
+				},
+			}
+
+			routes = append(routes, route)
+		}
+	}
+
+	virtualHost := envoy_route.VirtualHost{
+		Name:    "wildcard",
+		Domains: []string{"*"},
+		Routes:  routes,
+		Cors: &envoy_route.CorsPolicy{
+			Enabled: &types.BoolValue{
+				Value: true,
+			},
+			AllowOrigin:  []string{"*"},
+			AllowHeaders: "authorization,content-type,x-grpc-web",
+			AllowMethods: "POST",
+			AllowCredentials: &types.BoolValue{
+				Value: true,
+			},
+		},
+	}
+
+	routeConfig := &envoy.RouteConfiguration{
+		Name:         routeConfigName,
+		VirtualHosts: []envoy_route.VirtualHost{virtualHost},
+	}
+
+	routeConfigAny, err := types.MarshalAny(routeConfig)
+	if err != nil {
+		return nil, err
+	}
+	res.Resources = append(res.Resources, *routeConfigAny)
+	return res, nil
 }
 
 func (rds *RouteDiscoveryService) IncrementalRoutes(_ envoy.RouteDiscoveryService_IncrementalRoutesServer) error {

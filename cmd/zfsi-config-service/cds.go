@@ -61,7 +61,27 @@ func (cds *ClusterDiscoveryService) StreamClusters(call envoy.ClusterDiscoverySe
 }
 
 func (cds *ClusterDiscoveryService) FetchClusters(ctx context.Context, req *envoy.DiscoveryRequest) (*envoy.DiscoveryResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "unimplemented")
+	config := cds.cs.LastConfig()
+	services := config
+	if req.ResourceNames != nil {
+		resources := funk.Map(req.ResourceNames, func(resourceName string) (string, string) {
+			return resourceName, resourceName
+		}).(map[string]string)
+
+		services = funk.Filter(config, func(service service_agg.Service) bool {
+			_, ok := resources[service.Name]
+			return ok
+		}).([]service_agg.Service)
+	}
+
+	res := &envoy.DiscoveryResponse{
+		VersionInfo: time.Now().UTC().String(),
+		TypeUrl:     "type.googleapis.com/envoy.api.v2.Cluster",
+		Nonce:       req.ResponseNonce,
+		Resources:   servicesToClusterConfig(services),
+	}
+
+	return res, nil
 }
 
 func (cds *ClusterDiscoveryService) IncrementalClusters(_ envoy.ClusterDiscoveryService_IncrementalClustersServer) error {

@@ -3,6 +3,7 @@ package config_stream
 import (
 	"bytes"
 	"log"
+	"sync"
 
 	"github.com/cnf/structhash"
 	"github.com/hpidcock/zfsi/pkg/service-agg"
@@ -29,6 +30,7 @@ type ConfigStream struct {
 
 	subscriptions []*ConfigSubscription
 
+	configMutex    sync.RWMutex
 	lastConfig     Config
 	lastConfigHash []byte
 }
@@ -56,6 +58,13 @@ func (cs *ConfigStream) Register() *ConfigSubscription {
 
 func (cs *ConfigStream) Publish(config Config) {
 	cs.configChan <- config
+}
+
+func (cs *ConfigStream) LastConfig() Config {
+	cs.configMutex.RLock()
+	cfg := cs.lastConfig
+	cs.configMutex.RUnlock()
+	return cfg
 }
 
 func (cs *ConfigStream) Close() {
@@ -95,7 +104,9 @@ func (cs *ConfigStream) run() {
 		case config := <-cs.configChan:
 			cs.broadcast(config)
 		case subsciption := <-cs.newSubsciptions:
+			cs.configMutex.RLock()
 			subsciption.ConfigChan <- cs.lastConfig
+			cs.configMutex.RUnlock()
 			cs.subscriptions = append(cs.subscriptions, subsciption)
 		}
 	}
@@ -107,8 +118,10 @@ func (cs *ConfigStream) broadcast(config Config) {
 		return
 	}
 
+	cs.configMutex.Lock()
 	cs.lastConfig = config
 	cs.lastConfigHash = hash
+	cs.configMutex.Unlock()
 
 	published := make([]*ConfigSubscription, 0)
 	for _, subscription := range cs.subscriptions {
